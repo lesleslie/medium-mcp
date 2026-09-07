@@ -143,9 +143,14 @@ class Runtime:
         if self.asgi_app is not None:
             return self.asgi_app
         mcp_app = self.build_mcp_app()
-        asgi = mcp_app.streamable_http_app()  # type: ignore[no-any-return]
+        upstream = mcp_app.http_app()  # type: ignore[no-any-return]
 
-        @asgi.custom_route("/readyz", methods=["GET"])
+        # Mount the FastMCP ASGI app under a FastAPI wrapper so we can add
+        # /readyz alongside /health. The FastMCP http_app() returns a
+        # StarletteWithLifespan that doesn't accept custom_route.
+        wrapper = FastAPI(title="medium-mcp")
+
+        @wrapper.get("/readyz")
         async def _readyz() -> Response:
             await self.dhara.startup()
             reachable = await self.dhara.probe()
@@ -168,8 +173,9 @@ class Runtime:
                 media_type="application/json",
             )
 
-        self.asgi_app = asgi
-        return asgi
+        wrapper.mount("/", upstream)
+        self.asgi_app = wrapper
+        return wrapper
 
 
 _default_runtime: Runtime | None = None
