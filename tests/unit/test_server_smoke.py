@@ -52,4 +52,4 @@ async def test_domain_tools_registered_alongside_baseline() -> None:
     names = {t.name for t in await mcp_app.list_tools()}
     assert "budget_remaining" in names
     assert "article_content" in names
-    assert EXPECTED_BASELINE <= names
+    assert names >= EXPECTED_BASELINE

@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import httpx2
-import pytest
 
 from medium_mcp.tools.articles import article_content
-
 
 _METADATA_BODY = {
     "id": "abc",

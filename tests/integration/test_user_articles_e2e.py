@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from medium_mcp.tools.users import user_articles
 
 

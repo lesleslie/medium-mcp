@@ -46,8 +46,6 @@ async def publication_articles(
     raw = await cache.get_or_compute(
         "publication_articles",
         params,
-        lambda: client.request(
-            "publication_articles", params, tool_name="publication_articles"
-        ),
+        lambda: client.request("publication_articles", params, tool_name="publication_articles"),
     )
     return PublicationArticlesPage.model_validate(raw)

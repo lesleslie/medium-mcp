@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-from pydantic import ValidationError
 
 from medium_mcp.models.dto import (
     ArticleContent,

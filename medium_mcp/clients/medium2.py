@@ -192,7 +192,7 @@ class Medium2Client:
         if self._transport is not None:
             transport = self._transport
         else:
-            transport = httpx2.AsyncHTTPTransport()
+            transport = httpx2.AsyncHTTPTransport()  # noqa: FURB122  # plain async transport
 
         try:
             async with httpx2.AsyncClient(

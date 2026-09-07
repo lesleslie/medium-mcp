@@ -40,3 +40,10 @@ addopts = "--cov=medium_mcp --cov-report=term --cov-report=html --cov-fail-under
 [tool.ruff]
 line-length = 100
 target-version = "py314"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "UP", "B", "C4", "SIM"]
+ignore = ["E501", "SIM108"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["B017", "B007", "E741", "F841", "N801", "N802", "N803", "N814", "N818", "SIM116", "SIM117"]

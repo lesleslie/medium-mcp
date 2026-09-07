@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from medium_mcp.tools.search import search_publications, search_users
 
 

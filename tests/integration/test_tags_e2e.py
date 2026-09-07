@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from medium_mcp.tools.tags import tag_info, tag_latest
 
 

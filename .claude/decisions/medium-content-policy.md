@@ -13,16 +13,16 @@ return. Default-deny is the only posture that keeps the budget guard honest.
    `include_full_text=False`, regardless of cache state. The cache may hold
    `full_text` under the `content_key` prefix; the gate is at the return
    point, not the cache key.
-2. **Opt-in body.** Set `include_full_text=True` to receive `full_text`
+1. **Opt-in body.** Set `include_full_text=True` to receive `full_text`
    alongside the excerpt. The cache hit path also honors the flag — a cached
    body is *only* returned when the flag was set.
-3. **Truncation.** `excerpt` is capped at `excerpt_max_chars` (default 500,
+1. **Truncation.** `excerpt` is capped at `excerpt_max_chars` (default 500,
    max 2000) so a caller never receives an unbounded body. The
    `truncated: bool` field tells the caller whether the cap fired.
-4. **Format.** `format` is one of `"markdown"`, `"html"`, or `"text"`. The
+1. **Format.** `format` is one of `"markdown"`, `"html"`, or `"text"`. The
    tool does not transcode between formats; what the upstream returned is
    what the tool returns, gated only by the include flag.
-5. **No export.** `allow_content_export: bool` (default `false`) is a
+1. **No export.** `allow_content_export: bool` (default `false`) is a
    hard-stop on writing full text to disk or to a downstream store. Treat
    the body as in-memory-only; do not persist it.
 

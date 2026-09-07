@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import json
-
 import httpx2
 import pytest
 from pydantic import SecretStr
@@ -78,7 +76,7 @@ async def test_request_increments_budget_on_success(
     transport = _transport_that_returns(200, {"id": "abc"})
     client = Medium2Client(settings=settings, dhara=dhara, transport=transport)
     await client.request("user_info", {"user_id": "abc"}, tool_name="user_info")
-    counter = await dhara.get_counter(f"medium2:v1:budget:2026-09")  # placeholder key
+    counter = await dhara.get_counter("medium2:v1:budget:2026-09")  # placeholder key
     # The exact period is computed; assert via the public ``budget_status`` accessor.
     status = await client.budget_status()
     assert status["calls_used"] >= 1

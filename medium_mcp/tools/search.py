@@ -60,8 +60,6 @@ async def search_publications(
     raw = await cache.get_or_compute(
         "search_publications",
         params,
-        lambda: client.request(
-            "search_publications", params, tool_name="search_publications"
-        ),
+        lambda: client.request("search_publications", params, tool_name="search_publications"),
     )
     return SearchPublicationsPage.model_validate(raw)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
-from typing import Awaitable, Callable
 
 from fastmcp import FastMCP
 from mcp_common.tools.dispatch import ALL_TOOLS
@@ -145,9 +145,7 @@ def _register_publication_tools(app: FastMCP, bundle: ClientBundle) -> None:
     from medium_mcp.tools import publications
 
     @app.tool(name=publications.publication_info.__name__)
-    async def _publication_info(
-        publication_id: str | None = None, slug: str | None = None
-    ) -> dict:
+    async def _publication_info(publication_id: str | None = None, slug: str | None = None) -> dict:
         result = await publications.publication_info(
             settings=bundle.settings,
             dhara=bundle.dhara,
@@ -159,9 +157,7 @@ def _register_publication_tools(app: FastMCP, bundle: ClientBundle) -> None:
         return result.model_dump()
 
     @app.tool(name=publications.publication_articles.__name__)
-    async def _publication_articles(
-        publication_id: str, cursor: str | None = None
-    ) -> dict:
+    async def _publication_articles(publication_id: str, cursor: str | None = None) -> dict:
         result = await publications.publication_articles(
             settings=bundle.settings,
             dhara=bundle.dhara,

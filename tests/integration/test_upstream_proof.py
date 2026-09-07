@@ -21,7 +21,6 @@ from medium_mcp.clients.medium2 import Medium2Client
 from medium_mcp.config.settings import MediumSettings
 from medium_mcp.dhara.client import DharaClient
 
-
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
 
 

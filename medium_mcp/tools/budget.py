@@ -9,9 +9,9 @@ from medium_mcp.models.dto import BudgetStatus
 
 async def budget_remaining(
     *,
-    settings: MediumSettings,  # noqa: ARG001 - uniform caller wiring; budget lives on the client
-    dhara: DharaClient,  # noqa: ARG001 - same
-    cache: MediumCache,  # noqa: ARG001 - same
+    settings: MediumSettings,
+    dhara: DharaClient,
+    cache: MediumCache,
     client: Medium2Client,
 ) -> BudgetStatus:
     """Local read. Zero upstream calls. Spec §6.2.

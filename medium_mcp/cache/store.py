@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from medium_mcp.config.settings import MediumSettings
 from medium_mcp.dhara.client import DharaClient
@@ -9,7 +10,7 @@ from medium_mcp.dhara.keys import cache_key, coalesce_key, content_key
 from medium_mcp.utils.exceptions import MediumError
 
 
-class CoalesceTimeout(MediumError):
+class CoalesceTimeoutError(MediumError):
     """The leader's compute exceeded the coalesce window; follower gives up."""
 
 
@@ -50,7 +51,9 @@ class MediumCache:
             return self.settings.cache_ttl_search  # conservative default
         return getattr(self.settings, attr)
 
-    async def get(self, endpoint: str, params: dict[str, Any], *, content: bool = False) -> bytes | None:
+    async def get(
+        self, endpoint: str, params: dict[str, Any], *, content: bool = False
+    ) -> bytes | None:
         if content:
             article_id = params.get("article_id", "")
             return await self.dhara.get(content_key(article_id))
@@ -88,8 +91,8 @@ class MediumCache:
             fut = self._in_flight[key]
             try:
                 return await asyncio.wait_for(fut, timeout=self.settings.coalesce_window_seconds)
-            except asyncio.TimeoutError as exc:
-                raise CoalesceTimeout(
+            except TimeoutError as exc:
+                raise CoalesceTimeoutError(
                     "coalesce window elapsed waiting for leader",
                     context={"key": key, "window": self.settings.coalesce_window_seconds},
                 ) from exc

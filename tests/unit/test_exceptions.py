@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import pytest
-
 from medium_mcp.utils.exceptions import (
     BudgetExhaustedError,
     ConfigurationError,

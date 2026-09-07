@@ -33,7 +33,7 @@ APP_NAME = "medium-mcp"
 def _run_async_safely(coro: Any) -> Any:
     """Run an awaitable from a sync context, bridging asyncio.run or a worker thread."""
     try:
-        loop = asyncio.get_running_loop()
+        asyncio.get_running_loop()
     except RuntimeError:
         return asyncio.run(coro)
     with ThreadPoolExecutor(max_workers=1) as ex:
@@ -44,7 +44,7 @@ def build_runtime(
     *,
     settings: MediumSettings | None = None,
     dhara_backend: str = "memory",
-) -> "Runtime":
+) -> Runtime:
     s = settings or get_settings()
     # Configure logging exactly once, at the single startup entry point.
     # Never at module import time and never per-module: a second call would

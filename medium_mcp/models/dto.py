@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -76,7 +75,7 @@ class _UsersPage(_Base):
 
 
 class _PublicationsPage(_Base):
-    publications: list["PublicationInfo"]
+    publications: list[PublicationInfo]
     next_cursor: str | None = None
 
 

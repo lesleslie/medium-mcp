@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from oneiric.core.logging import LoggingConfig, configure_logging as _oneiric_configure
+from oneiric.core.logging import LoggingConfig
+from oneiric.core.logging import configure_logging as _oneiric_configure
 
 _configured = False
 

@@ -46,9 +46,7 @@ class FeedState:
 
     def mark_capability_unavailable(self, reason: str) -> None:
         if self.required:
-            raise ValueError(
-                f"required feed {self.name!r} cannot be marked unavailable: {reason}"
-            )
+            raise ValueError(f"required feed {self.name!r} cannot be marked unavailable: {reason}")
         self.errors_total += 1
         self.last_error = reason
 
