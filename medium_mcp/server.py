@@ -9,7 +9,9 @@ from fastapi import FastAPI, Response
 from fastmcp import FastMCP
 from mcp_common.auth.config import AuthConfig
 from mcp_common.auth.core import JWTIdentityProvider
+from mcp_common.auth.error_middleware import AuthErrorTranslationMiddleware
 from mcp_common.auth.health import AuthHealth
+from mcp_common.auth.identity import validate_auth_config
 from mcp_common.auth.middleware import BearerTokenMiddleware
 from mcp_common.baseline_tools import seed_liveness_context
 from mcp_common.bootstrap import bootstrap_baseline_tools
@@ -96,6 +98,11 @@ class Runtime:
         )
         if not auth_cfg.enabled:
             return None
+
+        # B6 fix: fail-loud at startup if the auth config is inconsistent
+        # (empty trusted_issuers, missing default_provider, etc.) rather than
+        # at the first request. Mirrors mcp-common's startup-check contract.
+        validate_auth_config(auth_cfg)
 
         providers: dict[str, Any] = {}
         if auth_cfg.identity_providers is None or "jwt" in auth_cfg.identity_providers:
