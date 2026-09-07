@@ -2,10 +2,15 @@ from __future__ import annotations
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import FastAPI, Response
 from fastmcp import FastMCP
+from mcp_common.auth.config import AuthConfig
+from mcp_common.auth.core import JWTIdentityProvider
+from mcp_common.auth.health import AuthHealth
+from mcp_common.auth.middleware import BearerTokenMiddleware
 from mcp_common.baseline_tools import seed_liveness_context
 from mcp_common.bootstrap import bootstrap_baseline_tools
 from mcp_common.health import register_http_health_route
@@ -74,6 +79,83 @@ class Runtime:
         self.client = client
         self.asgi_app: FastAPI | None = None
         self._mcp_app: FastMCP | None = None
+        self._auth_middleware: BearerTokenMiddleware | None = None
+        self._last_successful_verification_at: datetime | None = None
+
+    def _build_auth_middleware(self) -> BearerTokenMiddleware | None:
+        """Construct BearerTokenMiddleware when auth is enabled.
+
+        I-9 fix (Task 14.3): guard ``secret is None`` before
+        ``.get_secret_value()``. A sibling that uses only Anthropic
+        (no JWT) should not crash with AttributeError when constructing
+        the providers dict.
+        """
+        auth_cfg = AuthConfig(
+            service_name=APP_NAME,
+            secret_env_var="MEDIUM_MCP_SECRET",
+        )
+        if not auth_cfg.enabled:
+            return None
+
+        providers: dict[str, Any] = {}
+        if auth_cfg.identity_providers is None or "jwt" in auth_cfg.identity_providers:
+            # I-9 fix: a JWT provider requires a non-None secret. Without this
+            # guard, a misconfiguration (provider declared, secret absent) crashes
+            # with AttributeError on .get_secret_value() at startup.
+            if auth_cfg.resolved_secret is None:
+                raise RuntimeError(
+                    "auth.identity_providers['jwt'] is configured but "
+                    "auth.resolved_secret is None — set MEDIUM_MCP_SECRET or "
+                    "BODAI_SHARED_SECRET, or remove the JWT provider."
+                )
+            providers["jwt"] = JWTIdentityProvider(
+                name="jwt",
+                secret=auth_cfg.resolved_secret,
+                trusted_issuers=auth_cfg.trusted_issuers,
+            )
+
+        self._auth_middleware = BearerTokenMiddleware(
+            auth_config=auth_cfg, providers=providers
+        )
+        return self._auth_middleware
+
+    def _build_auth_health_provider(self):
+        """I-4 fix (Task 14.3 wiring): expose middleware counters via an
+        auth_health_provider callable so register_http_health_route's
+        per-request is_degraded() reflects actual verifications/errors.
+
+        Without this wiring, /health will always report
+        verifications_total=0 in production — the wiring-discipline §3
+        four signals (entities_count, last_updated_timestamp, errors_total,
+        cycles_total) all rely on it.
+
+        The callable is sync because ``register_http_health_route`` invokes
+        ``auth_health_provider()`` and treats the result as an
+        ``AuthHealth`` instance (not a coroutine). We therefore construct
+        ``AuthHealth`` directly via its dataclass constructor instead of
+        awaiting the async ``from_providers`` factory. Provider ``state``
+        defaults to ``"healthy"`` until a verification fails.
+        """
+        if self._auth_middleware is None:
+            return None
+
+        def _provider() -> AuthHealth | None:
+            mw = self._auth_middleware
+            if mw is None:
+                return None
+            from mcp_common.auth.provider import ProviderHealth
+
+            return AuthHealth(
+                providers={
+                    name: ProviderHealth(name=name, state="healthy")
+                    for name in mw._providers
+                },
+                verifications_total=mw.verifications_total,
+                errors_total=mw.errors_total,
+                last_successful_verification_at=self._last_successful_verification_at,
+            )
+
+        return _provider
 
     def build_mcp_app(self) -> FastMCP:
         if self._mcp_app is not None:
@@ -94,11 +176,19 @@ class Runtime:
         # the decorator has already exposed it — the dual-track drift.
         seed_liveness_context(service_name=APP_NAME, version=__version__)
         bootstrap_baseline_tools(app)
+
+        # Task 14.3 wiring: BearerTokenMiddleware is constructed before
+        # register_http_health_route so the auth_health_provider callable
+        # captures a live reference to the middleware's counters.
+        self._build_auth_middleware()
+        if self._auth_middleware is not None:
+            app.add_middleware(self._auth_middleware)
         register_http_health_route(
             app,
             service_name=APP_NAME,
             version=__version__,
             extra_components=as_components(),
+            auth_health_provider=self._build_auth_health_provider(),
         )
 
         # Profile dispatch. Sync ``apply_tool_profile`` raises when called from
