@@ -190,6 +190,11 @@ class Runtime:
         self._build_auth_middleware()
         if self._auth_middleware is not None:
             app.add_middleware(self._auth_middleware)
+        # B2 fix: AuthError subclasses raised by BearerTokenMiddleware must be
+        # translated to JSON-RPC -32001 with OAuth-style data. Install the
+        # translator unconditionally so AuthErrors surfaced by future
+        # middleware (or by @require_auth) hit the same shape end-to-end.
+        app.add_middleware(AuthErrorTranslationMiddleware())
         register_http_health_route(
             app,
             service_name=APP_NAME,
