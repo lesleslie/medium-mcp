@@ -28,10 +28,10 @@ def test_wheel_contains_package() -> None:
     assert not any(n.startswith("src/") for n in names), names
 
 
-def test_coverage_floor_is_70() -> None:
-    """Coverage floor must start at 70 so Phase 1 can ratchet up."""
+def test_coverage_floor_is_85() -> None:
+    """Coverage floor must be at least 85 once Phase 1 lands."""
     import tomllib
 
     pyproject = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text())
     addopts = pyproject["tool"]["pytest"]["ini_options"]["addopts"]
-    assert "--cov-fail-under=70" in addopts
+    assert "--cov-fail-under=85" in addopts

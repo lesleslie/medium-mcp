@@ -35,7 +35,7 @@ markers = [
     "requires_auth: requires MEDIUM_MCP_RAPIDAPI_KEY in env",
     "requires_bpf: requires /dev/bpf* access",
 ]
-addopts = "--cov=medium_mcp --cov-report=term --cov-report=html --cov-fail-under=70"
+addopts = "--cov=medium_mcp --cov-report=term --cov-report=html --cov-fail-under=85"
 
 [tool.ruff]
 line-length = 100

@@ -109,7 +109,7 @@ class SearchPublicationsPage(_PublicationsPage):
 
 
 class PublicationInfo(_Base):
-    publication_id: str
+    publication_id: str = Field(validation_alias="id")
     slug: str | None = None
     name: str
     description: str | None = None
