@@ -13,7 +13,7 @@ class _Base(BaseModel):
 
 
 class UserInfo(_Base):
-    user_id: str
+    user_id: str = Field(validation_alias="id")
     username: str | None = None
     fullname: str | None = None
     followers_count: int = 0
@@ -25,9 +25,9 @@ class UserInfo(_Base):
 class ArticleSummary(_Base):
     """Never carries full_text — that lives only in ArticleContent."""
 
-    article_id: str
+    article_id: str = Field(validation_alias="id")
     title: str
-    author_id: str
+    author_id: str = Field(validation_alias="author")
     published_at: str  # ISO-8601 from upstream
     reading_time: int = 0
     claps: int = 0
@@ -35,10 +35,10 @@ class ArticleSummary(_Base):
 
 
 class ArticleMetadata(_Base):
-    article_id: str
+    article_id: str = Field(validation_alias="id")
     title: str
     subtitle: str | None = None
-    author_id: str
+    author_id: str = Field(validation_alias="author")
     published_at: str
     reading_time: int = 0
     claps: int = 0
