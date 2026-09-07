@@ -47,3 +47,10 @@ ignore = ["E501", "SIM108"]
 
 [tool.ruff.lint.per-file-ignores]
 "tests/**/*.py" = ["B017", "B007", "E741", "F841", "N801", "N802", "N803", "N814", "N818", "SIM116", "SIM117"]
+
+# Pin mcp-common to local dev path so the new auth surface (BearerTokenMiddleware,
+# AuthHealth, JWTIdentityProvider, IdentityProvider, etc.) is available. The
+# PyPI 0.24.5 wheel predates the auth primitives rewrite; future installs
+# require either a release bump or this editable override.
+[tool.uv.sources]
+mcp-common = { path = "../mcp-common", editable = true }
