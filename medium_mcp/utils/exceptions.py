@@ -100,5 +100,5 @@ class BudgetExhaustedError(MediumError):
             "period": self.period,
             "resets_at": self.resets_at,
             "retryable": False,
-            "cached_alternatives": list(self.cached_alternatives),
+            "cached_alternatives": self.cached_alternatives.copy(),
         }

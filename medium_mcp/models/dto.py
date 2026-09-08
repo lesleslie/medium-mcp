@@ -58,7 +58,11 @@ class ArticleContent(_Base):
     @field_validator("excerpt")
     @classmethod
     def _truncate_excerpt(cls, v: str) -> str:
-        cap = MediumSettings(_env_file=None).excerpt_max_chars
+        # ``MediumSettings()`` falls back to defaults when ``.env`` is absent,
+        # which is the common case. The configured ``excerpt_max_chars`` is the
+        # authoritative truncation cap; the caller-side ``articles.py`` uses
+        # the same field and sets ``truncated=True`` for the user-visible flag.
+        cap = MediumSettings().excerpt_max_chars
         if len(v) > cap:
             return v[:cap]
         return v

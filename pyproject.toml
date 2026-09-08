@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "medium-mcp"
-version = "0.1.0"
+version = "0.1.1"
 description = "MCP server for Medium content via RapidAPI's medium2"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -54,3 +54,8 @@ ignore = ["E501", "SIM108"]
 # require either a release bump or this editable override.
 [tool.uv.sources]
 mcp-common = { path = "../mcp-common", editable = true }
+
+[dependency-groups]
+dev = [
+    "crackerjack>=0.80.3",
+]

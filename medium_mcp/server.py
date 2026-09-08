@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import Any
 
 from fastapi import FastAPI, Response
@@ -121,9 +121,7 @@ class Runtime:
                 trusted_issuers=auth_cfg.trusted_issuers,
             )
 
-        self._auth_middleware = BearerTokenMiddleware(
-            auth_config=auth_cfg, providers=providers
-        )
+        self._auth_middleware = BearerTokenMiddleware(auth_config=auth_cfg, providers=providers)
         return self._auth_middleware
 
     def _build_auth_health_provider(self):
@@ -154,8 +152,7 @@ class Runtime:
 
             return AuthHealth(
                 providers={
-                    name: ProviderHealth(name=name, state="healthy")
-                    for name in mw._providers
+                    name: ProviderHealth(name=name, state="healthy") for name in mw._providers
                 },
                 verifications_total=mw.verifications_total,
                 errors_total=mw.errors_total,
@@ -244,8 +241,9 @@ class Runtime:
     def build_asgi_app(self) -> FastAPI:
         if self.asgi_app is not None:
             return self.asgi_app
-        mcp_app = self.build_mcp_app()
-        upstream = mcp_app.http_app()  # type: ignore[no-any-return]
+        # ``mcp_app`` is the FastMCP app we just built; ``upstream`` is its
+        # HTTP/ASGI handle, which we mount under the FastAPI wrapper below.
+        upstream = self.build_mcp_app().http_app()  # type: ignore[no-any-return]
 
         # Mount the FastMCP ASGI app under a FastAPI wrapper so we can add
         # /readyz alongside /health. The FastMCP http_app() returns a

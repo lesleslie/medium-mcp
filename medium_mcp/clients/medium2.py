@@ -68,11 +68,12 @@ class Medium2Client:
         return self._period()
 
     def _resets_at(self) -> str:
-        now = datetime.now(UTC)
-        next_month = (now.replace(day=1) + timedelta(days=32)).replace(
-            day=1, hour=0, minute=0, second=0, microsecond=0
+        return (
+            (datetime.now(UTC).replace(day=1) + timedelta(days=32))
+            .replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+            .isoformat()
+            .replace("+00:00", "Z")
         )
-        return next_month.isoformat().replace("+00:00", "Z")
 
     def _budget_ceiling(self) -> int:
         """Reservations may never push the counter past this value."""
@@ -153,26 +154,39 @@ class Medium2Client:
         max_pages: int = 1,
         tool_name: str,
     ) -> dict[str, Any]:
+        self._check_max_pages(max_pages, tool_name)
+        await self._ensure_dhara_reachable(tool_name)
+        reserved = min_cost * max_pages
+        _counter, period = await self._reserve_budget(reserved)
+        key_value = await self._take_rapidapi_key(period, reserved, tool_name)
+        response = await self._dispatch(endpoint, params, key_value, tool_name)
+        self._raise_for_status(response, endpoint, tool_name)
+        return self._parse_body(response)
+
+    def _check_max_pages(self, max_pages: int, tool_name: str) -> None:
         if max_pages != 1:
             raise ConfigurationError(
                 "max_pages > 1 is not supported in v1; reserve one page per call",
                 context={"max_pages": max_pages, "tool": tool_name},
             )
 
-        # Dhara-down gate. No counter means no guard, and an unguarded call is
-        # budget we can never account for — so refuse before reserving.
-        probe_ok = await self.dhara.probe()
-        if not probe_ok:
-            raise UpstreamError(
-                "dhara unreachable; refusing metered call",
-                status_code=0,
-                body="",
-                context={"reason": "dhara_unreachable", "tool": tool_name},
-            )
+    async def _ensure_dhara_reachable(self, tool_name: str) -> None:
+        """Dhara-down gate. No counter means no guard.
 
-        reserved = min_cost * max_pages
-        _counter, period = await self._reserve_budget(reserved)
+        An unguarded metered call is budget we can never account for, so
+        refuse before reserving.
+        """
+        if await self.dhara.probe():
+            return
+        raise UpstreamError(
+            "dhara unreachable; refusing metered call",
+            status_code=0,
+            body="",
+            context={"reason": "dhara_unreachable", "tool": tool_name},
+        )
 
+    async def _take_rapidapi_key(self, period: str, reserved: int, tool_name: str) -> str:
+        """Return the secret or release the reservation and raise."""
         if self.settings.rapidapi_key is None:
             # Reserved but never dispatched — hand the reservation back.
             await self._release_reservation(period, reserved)
@@ -180,26 +194,39 @@ class Medium2Client:
                 "rapidapi_key missing — validate_rapidapi_key must run at startup",
                 context={"env_var": "MEDIUM_MCP_RAPIDAPI_KEY", "tool": tool_name},
             )
-        key_value = self.settings.rapidapi_key.get_secret_value()
+        return self.settings.rapidapi_key.get_secret_value()
 
-        base = str(self.settings.rapidapi_base_url).rstrip("/")
-        url = urljoin(base + "/", endpoint)
-        headers = {
+    def _build_transport(self) -> httpx2.MockTransport | httpx2.AsyncHTTPTransport:
+        if self._transport is not None:
+            return self._transport
+        return httpx2.AsyncHTTPTransport()
+
+    @staticmethod
+    def _build_headers(key_value: str) -> dict[str, str]:
+        return {
             "X-RapidAPI-Key": key_value,
             "X-RapidAPI-Host": "medium2.p.rapidapi.com",
         }
 
-        if self._transport is not None:
-            transport = self._transport
-        else:
-            transport = httpx2.AsyncHTTPTransport()  # noqa: FURB122  # plain async transport
-
+    async def _dispatch(
+        self,
+        endpoint: str,
+        params: dict[str, Any],
+        key_value: str,
+        tool_name: str,
+    ) -> httpx2.Response:
+        base = self.settings.rapidapi_base_url.rstrip("/")
+        url = urljoin(base + "/", endpoint)
         try:
             async with httpx2.AsyncClient(
-                transport=transport,
+                transport=self._build_transport(),
                 timeout=self.settings.http_timeout_seconds,
             ) as http:
-                response = await http.get(url, params=params, headers=headers)
+                return await http.get(
+                    url,
+                    params=params,
+                    headers=self._build_headers(key_value),
+                )
         except httpx2.HTTPError as exc:
             # Network errors: count as metered (spec rule).
             raise UpstreamError(
@@ -209,30 +236,35 @@ class Medium2Client:
                 context={"endpoint": endpoint, "tool": tool_name},
             ) from exc
 
-        # Any non-2xx counts as a metered failure (spec rule).
-        if response.status_code == 404:
+    @staticmethod
+    def _raise_for_status(response: httpx2.Response, endpoint: str, tool_name: str) -> None:
+        """Any non-2xx counts as a metered failure (spec rule)."""
+        code = response.status_code
+        if code == 404:
             raise NotFoundError(
                 "medium2 returned 404",
                 status_code=404,
                 body=response.text,
                 context={"endpoint": endpoint, "tool": tool_name},
             )
-        if response.status_code == 429:
+        if code == 429:
             raise RateLimitedError(
                 "medium2 returned 429",
                 status_code=429,
                 body=response.text,
                 context={"endpoint": endpoint, "tool": tool_name},
             )
-        if response.status_code >= 400:
+        if code >= 400:
             raise UpstreamError(
-                f"medium2 returned {response.status_code}",
-                status_code=response.status_code,
+                f"medium2 returned {code}",
+                status_code=code,
                 body=response.text,
                 context={"endpoint": endpoint, "tool": tool_name},
             )
 
-        # The reservation stands: this call reached RapidAPI (spec §6.2).
+    @staticmethod
+    def _parse_body(response: httpx2.Response) -> dict[str, Any]:
+        """The reservation stands: this call reached RapidAPI (spec §6.2)."""
         try:
             return response.json()
         except json.JSONDecodeError:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field, HttpUrl, SecretStr
+from pydantic import Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -20,7 +20,7 @@ class MediumSettings(BaseSettings):
     )
 
     # Network
-    rapidapi_base_url: HttpUrl = "https://medium2.p.rapidapi.com"
+    rapidapi_base_url: str = "https://medium2.p.rapidapi.com"
     rapidapi_key: SecretStr | None = None
     http_port: int | None = 3055
     http_timeout_seconds: float = 30.0

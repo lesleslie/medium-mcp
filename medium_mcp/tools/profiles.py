@@ -7,7 +7,10 @@ from fastmcp import FastMCP
 from mcp_common.tools.dispatch import ALL_TOOLS
 from mcp_common.tools.profiles import ToolProfile
 
+from medium_mcp.cache.store import MediumCache
+from medium_mcp.clients.medium2 import Medium2Client
 from medium_mcp.config.settings import MediumSettings
+from medium_mcp.dhara.client import DharaClient
 
 MEDIUM_MANDATORY_GROUPS: set[str] = {"health_tools"}
 
@@ -34,9 +37,9 @@ PROFILE_REGISTRATIONS: dict[
 @dataclass
 class ClientBundle:
     settings: MediumSettings
-    dhara: object  # DharaClient, late-typed to avoid import cycles in this sketch
-    cache: object
-    client: object  # Medium2Client
+    dhara: DharaClient
+    cache: MediumCache
+    client: Medium2Client
 
 
 def _register_health_tools(_server: FastMCP) -> None:
@@ -250,16 +253,14 @@ def _register_budget_tools(app: FastMCP, bundle: ClientBundle) -> None:
         return result.model_dump()
 
 
-def register_all_tool_groups(
-    app: FastMCP, bundle: ClientBundle
-) -> dict[str, Callable[[FastMCP], Awaitable[None] | None]]:
+def register_all_tool_groups(app: FastMCP, bundle: ClientBundle) -> None:
     """Register every domain tool group against the FastMCP ``app``.
 
     Called by the dispatcher's ``register_all_fn`` when ``PROFILE_REGISTRATIONS[FULL]``
-    is the ``ALL_TOOLS`` sentinel. Returns the registration map so the dispatcher
-    can invoke each callable.
+    is the ``ALL_TOOLS`` sentinel. The map itself is passed separately as
+    ``registration_map`` so this function returns ``None`` to match the
+    dispatcher's ``Callable[[FastMCP], Awaitable[None] | None] | None`` contract.
     """
     registration_map = _build_registration_map(bundle)
     for fn in registration_map.values():
         fn(app)
-    return registration_map

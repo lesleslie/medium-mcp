@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import json
 from collections.abc import Awaitable, Callable
 from typing import Any
 
@@ -78,7 +79,7 @@ class MediumCache:
         self,
         endpoint: str,
         params: dict[str, Any],
-        compute_fn: Callable[[], Awaitable[bytes]],
+        compute_fn: Callable[[], Awaitable[bytes | dict[str, Any]]],
     ) -> bytes:
         cached = await self.get(endpoint, params)
         if cached is not None:
@@ -102,10 +103,20 @@ class MediumCache:
         self._in_flight[key] = fut
         try:
             value = await compute_fn()
-            await self.put(endpoint, params, value, ttl=self._ttl_for(endpoint))
+            # Accept either bytes or dict: callers that already serialize (e.g.
+            # tests passing ``async def compute() -> bytes``) keep working, and
+            # tool call sites passing ``lambda: client.request(...)`` no longer
+            # need to wrap the dict in a JSON encoder themselves. ``model_validate``
+            # on the caller side accepts JSON bytes directly.
+            serialized = (
+                value
+                if isinstance(value, bytes)
+                else json.dumps(value, separators=(",", ":")).encode()
+            )
+            await self.put(endpoint, params, serialized, ttl=self._ttl_for(endpoint))
             if not fut.done():
-                fut.set_result(value)
-            return value
+                fut.set_result(serialized)
+            return serialized
         except BaseException as exc:
             if not fut.done():
                 fut.set_exception(exc)

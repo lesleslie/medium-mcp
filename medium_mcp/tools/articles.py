@@ -75,7 +75,7 @@ async def article_content(
         else:
             full_text = cached.decode()
 
-    excerpt = metadata.excerpt or ""
+    excerpt = metadata.excerpt
     if len(excerpt) > settings.excerpt_max_chars:
         excerpt = excerpt[: settings.excerpt_max_chars]
         truncated = True
