@@ -1,0 +1,11 @@
+{
+  "author": {
+    "name": "Bodai"
+  },
+  "description": "Bodai plugin for the Medium content publishing MCP server (RapidAPI medium2).",
+  "keywords": ["bodai", "mcp", "medium", "content-publishing"],
+  "mcpServers": "./.mcp.json",
+  "name": "medium",
+  "schema_version": "1.0.0",
+  "version": "0.1.0"
+}
