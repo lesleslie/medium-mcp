@@ -1,9 +1,13 @@
 {
   "author": {
-    "name": "Bodai"
+    "name": "Wedgwood Web Works"
   },
-  "description": "Bodai plugin for the Medium content publishing MCP server (RapidAPI medium2).",
-  "keywords": ["bodai", "mcp", "medium", "content-publishing"],
+  "description": "Plugin for the Medium content publishing MCP server (RapidAPI medium2).",
+  "keywords": [
+    "mcp",
+    "medium",
+    "content-publishing"
+  ],
   "mcpServers": "./.mcp.json",
   "name": "medium",
   "schema_version": "1.0.0",
