@@ -54,7 +54,7 @@ Two routes, answering different questions:
 - **`/readyz`** — HTTP 503 when a required feed has not yet returned data,
   200 otherwise. For readiness probes.
 
-`dhara` is a required feed (the budget counter rides on it), so a freshly
+The budget counter requires an initial tool call to initialize, so a freshly
 started server returns 503 on `/readyz` until a tool call succeeds. That is
 intentional: a server whose counter has never been touched cannot guarantee
 its budget, and lies would defeat the only guard we have.
@@ -62,7 +62,7 @@ its budget, and lies would defeat the only guard we have.
 ## Budget
 
 The server enforces a strict monthly budget (`medium_mcp.budget.monthly_budget`,
-default **150 metered calls / period**) under a Dhara-backed advisory lock.
+default **150 metered calls / period**) under a backend advisory lock.
 Once exhausted, metered calls are refused with this payload:
 
 ```json
@@ -111,3 +111,7 @@ rest. See `settings/medium-mcp.yaml` for the full list.
 ## License
 
 BSD-3-Clause.
+
+Built on [Oneiric](https://github.com/lesleslie/oneiric) for runtime configuration
+and [mcp-common](https://github.com/lesleslie/mcp-common) for the FastMCP
+baseline. [Crackerjack](https://github.com/lesleslie/crackerjack) gates every commit.
