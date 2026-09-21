@@ -5,7 +5,7 @@ from pydantic import SecretStr
 from medium_mcp.config.settings import MediumSettings
 from medium_mcp.server import build_runtime, get_app
 
-# The four tools mcp_common's bootstrap installs on every Bodai MCP server.
+# The four tools mcp_common's bootstrap installs on every mcp-common MCP server.
 # Mirrors archive-org-mcp. If this set shrinks, the wiring-discipline health
 # aggregation loses its probes.
 EXPECTED_BASELINE = {

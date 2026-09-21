@@ -45,7 +45,7 @@ class ClientBundle:
 def _register_health_tools(_server: FastMCP) -> None:
     """Health group — present at every profile.
 
-    The four Bodai baseline tools (discover_tools, get_liveness, get_readiness,
+    The four mcp-common baseline tools (discover_tools, get_liveness, get_readiness,
     health_check_all) are registered globally by ``bootstrap_baseline_tools``
     in ``server.py``, so this group is intentionally a no-op. It exists so the
     profile dispatch table carries the group key and ``mandatory_groups``
