@@ -5,9 +5,9 @@ import time
 from typing import Any
 
 from dhara.lock.in_memory import InMemoryDharaLock
-from dhara.mcp.kv_timeseries import AsyncKVTimeSeriesStore
 
 from medium_mcp.config.settings import MediumSettings
+from medium_mcp.dhara.kv_store import AsyncKVStore
 from medium_mcp.utils.exceptions import ConfigurationError
 
 # How long a successful/failed ``probe()`` result stays warm.
@@ -25,7 +25,7 @@ class DharaClient:
     def __init__(self, settings: MediumSettings, backend: str = "memory") -> None:
         self.settings = settings
         self.backend = backend
-        self._kv: AsyncKVTimeSeriesStore | None = None
+        self._kv: AsyncKVStore | None = None
         self._lock: InMemoryDharaLock | None = None
         self._started = False
         self._namespace = settings.dhara_namespace
@@ -43,7 +43,7 @@ class DharaClient:
 
             storage = AsyncMemoryStorage()
             conn = await AsyncConnection.new(storage)
-            self._kv = AsyncKVTimeSeriesStore(connection=conn)
+            self._kv = AsyncKVStore(connection=conn)
             self._lock = InMemoryDharaLock()
         else:
             raise ConfigurationError(
@@ -61,7 +61,7 @@ class DharaClient:
         self._probe_cache_value = False
 
     @property
-    def kv(self) -> AsyncKVTimeSeriesStore:
+    def kv(self) -> AsyncKVStore:
         if self._kv is None:
             raise RuntimeError("DharaClient.startup() not called")
         return self._kv
