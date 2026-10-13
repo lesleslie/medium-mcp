@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Removed
+
+- medium-mcp: Removed Dhara substrate imports from `medium_mcp/dhara/{client,kv_store}.py`; the `medium_mcp/dhara/` directory is dropped; the `DharaClient` class moves to `medium_mcp/storage/dhara_client.py`; the `AsyncKVStore` class moves to `medium_mcp/storage/in_memory_kv.py`; the `Lock` primitive moves to `medium_mcp/utils/in_process_lock.py` (a 30-line substrate-agnostic local copy mirroring `mahavishnu.core._lock_sentinel.Lock`'s shape). See `docs/plans/2026-10-13-medium-mcp-migrate-off-dhara.md`.
+
+### Internal
+
+- medium-mcp: All internal callers of `medium_mcp.dhara.*` updated to `medium_mcp.storage.*` (16 files)
+
 ## [0.1.4] - 2026-09-26
 
 ### Added

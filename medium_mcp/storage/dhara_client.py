@@ -4,29 +4,40 @@ import asyncio
 import time
 from typing import Any
 
-from dhara.lock.in_memory import InMemoryDharaLock
-
 from medium_mcp.config.settings import MediumSettings
-from medium_mcp.dhara.kv_store import AsyncKVStore
+from medium_mcp.storage.in_memory_kv import AsyncKVStore
 from medium_mcp.utils.exceptions import ConfigurationError
+from medium_mcp.utils.in_process_lock import Lock
 
 # How long a successful/failed ``probe()`` result stays warm.
 PROBE_CACHE_SECONDS = 5.0
 
 
 class DharaClient:
-    """Wraps Dhara's KV store and advisory lock for medium-mcp.
+    """Wraps the in-process KV store and advisory lock for medium-mcp.
 
-    Two production backends are accepted ("memory" for tests, "sql"/"postgres"
-    for cross-process). The lock module's ``try_acquire`` returning ``None``
-    on contention is the serialization primitive the budget guard uses.
+    The Dhara substrate was decommissioned (per `docs/plans/2026-09-16-dhara-mcp-retirement-plan.md`,
+    status complete). medium-mcp migrates to substrate-agnostic primitives —
+    ``medium_mcp.storage.in_memory_kv.AsyncKVStore`` (replaces the Dhara-backed
+    ``AsyncMemoryStorage``+``AsyncConnection`` chain) and
+    ``medium_mcp.utils.in_process_lock.Lock`` (replaces ``InMemoryDharaLock``).
+
+    ``medium-mcp`` is a ``*-mcp`` repo (per `feedback-no-bodai-mentions-in-mcp-repos`)
+    and cannot take a `mahavishnu` runtime dep, so the in-process ``Lock`` is a
+    30-line local copy mirroring the ``mahavishnu.core._lock_sentinel.Lock``
+    shape — see `feedback-substrate-compat-shim-rot.md`.
+
+    Only the ``"memory"`` backend is supported; the ``"sql"``/``"postgres"``
+    cross-process backends were also retired with the Dhara substrate (the
+    ``memory`` backend was always the canonical choice for medium-mcp's per-
+    process use case).
     """
 
     def __init__(self, settings: MediumSettings, backend: str = "memory") -> None:
         self.settings = settings
         self.backend = backend
         self._kv: AsyncKVStore | None = None
-        self._lock: InMemoryDharaLock | None = None
+        self._lock: Lock | None = None
         self._started = False
         self._namespace = settings.dhara_namespace
         # ``probe()`` is on the hot path (every metered call gates on it), so its
@@ -38,13 +49,8 @@ class DharaClient:
         if self._started:
             return
         if self.backend == "memory":
-            from dhara.core.connection import AsyncConnection
-            from dhara.storage.memory import AsyncMemoryStorage
-
-            storage = AsyncMemoryStorage()
-            conn = await AsyncConnection.new(storage)
-            self._kv = AsyncKVStore(connection=conn)
-            self._lock = InMemoryDharaLock()
+            self._kv = AsyncKVStore()
+            self._lock = Lock()
         else:
             raise ConfigurationError(
                 f"unknown backend {self.backend!r}; medium-mcp v1 supports 'memory' only",
@@ -67,13 +73,13 @@ class DharaClient:
         return self._kv
 
     @property
-    def lock(self) -> InMemoryDharaLock:
+    def lock(self) -> Lock:
         if self._lock is None:
             raise RuntimeError("DharaClient.startup() not called")
         return self._lock
 
     async def probe(self) -> bool:
-        """Round-trip a sentinel key to confirm Dhara is reachable.
+        """Round-trip a sentinel key to confirm the KV store is reachable.
 
         Result is cached for ``PROBE_CACHE_SECONDS`` because every metered call
         gates on this; without the cache a burst of tool calls would each pay a

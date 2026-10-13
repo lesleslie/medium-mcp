@@ -23,7 +23,7 @@ from medium_mcp.auth.key import validate_rapidapi_key
 from medium_mcp.cache.store import MediumCache
 from medium_mcp.clients.medium2 import Medium2Client
 from medium_mcp.config.settings import MediumSettings, get_settings
-from medium_mcp.dhara.client import DharaClient
+from medium_mcp.storage.dhara_client import DharaClient
 from medium_mcp.feeds import FEEDS, as_components, required_feeds_healthy
 from medium_mcp.tools.profiles import (
     MEDIUM_MANDATORY_GROUPS,

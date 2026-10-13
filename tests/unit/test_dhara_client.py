@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 from medium_mcp.config.settings import MediumSettings
-from medium_mcp.dhara.client import DharaClient
+from medium_mcp.storage.dhara_client import DharaClient
 
 
 @pytest.fixture

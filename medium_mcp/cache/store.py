@@ -6,8 +6,8 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from medium_mcp.config.settings import MediumSettings
-from medium_mcp.dhara.client import DharaClient
-from medium_mcp.dhara.keys import cache_key, coalesce_key, content_key
+from medium_mcp.storage.dhara_client import DharaClient
+from medium_mcp.storage.keys import cache_key, coalesce_key, content_key
 from medium_mcp.utils.exceptions import MediumError
 
 

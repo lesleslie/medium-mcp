@@ -19,7 +19,7 @@ import pytest
 from medium_mcp.auth.key import validate_rapidapi_key
 from medium_mcp.clients.medium2 import Medium2Client
 from medium_mcp.config.settings import MediumSettings
-from medium_mcp.dhara.client import DharaClient
+from medium_mcp.storage.dhara_client import DharaClient
 
 FIXTURES = Path(__file__).resolve().parent.parent / "fixtures"
 

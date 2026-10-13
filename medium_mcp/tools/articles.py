@@ -5,8 +5,8 @@ from typing import Literal
 from medium_mcp.cache.store import MediumCache
 from medium_mcp.clients.medium2 import Medium2Client
 from medium_mcp.config.settings import MediumSettings
-from medium_mcp.dhara.client import DharaClient
-from medium_mcp.dhara.keys import content_key
+from medium_mcp.storage.dhara_client import DharaClient
+from medium_mcp.storage.keys import content_key
 from medium_mcp.models.dto import (
     ArticleContent,
     ArticleMetadata,

@@ -43,7 +43,7 @@ def _build_runtime_with_auth(settings: MediumSettings):
     """Build a Runtime that has auth wired in (mirrors scapy build_runtime)."""
     from medium_mcp.cache.store import MediumCache
     from medium_mcp.clients.medium2 import Medium2Client
-    from medium_mcp.dhara.client import DharaClient
+    from medium_mcp.storage.dhara_client import DharaClient
     from medium_mcp.server import Runtime
 
     dhara = DharaClient(settings=settings, backend="memory")
